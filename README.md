@@ -4,7 +4,7 @@ Multithreaded TCP Server written in Go.
 The server has thread (goroutine) pooling functionality.
 
 ##Dependencies
-The Go programming language  
+The Go programming language: https://golang.org/  
 Bash  
 
 ##Usage Instructions
