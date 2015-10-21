@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"net/http" //used for finding external IP only
 	"os"
 	"strconv"
 	"strings"
@@ -11,6 +12,7 @@ import (
 
 var (
 	IP        = getIP()
+	EXT_IP    = getExternalIP()
 	PORT      = getPort()
 	MaxWorker = getMaxWorkers()
 	MaxQueue  = getMaxQueue()
@@ -113,12 +115,13 @@ func handleRequest(conn net.Conn) {
 	connReader := bufio.NewReader(conn)
 	message, _ := connReader.ReadString('\n')
 	message = strings.TrimSuffix(message, "\r\n")
+	message = strings.TrimSuffix(message, "\n")
 	response := "\n"
 	if strings.HasPrefix(message, "HELO ") {
-		text := strings.TrimPrefix(message, "HELO")
-		text = strings.TrimSuffix(text, "\\n")
+		text := strings.TrimPrefix(message, "HELO ")
+		text = strings.TrimSuffix(text, "\n")
 		response = HELO(text)
-	} else if message == "KILL_SERVICE\\n" {
+	} else if message == "KILL_SERVICE" {
 		killService()
 	} else {
 		response = otherMessage(message)
@@ -135,7 +138,7 @@ func otherMessage(message string) string {
 }
 
 func HELO(text string) string {
-	return "HELO " + text + "\\nIP:" + IP + "\\nPort:" + PORT + "\\nStudentID:ea5f6b94d6a8a8f1e7890f6a64883cdc2b6125821e20ddd36a33b773bd46b727\\n\n"
+	return "HELO " + text + "\nIP:" + EXT_IP + "\nPort:" + PORT + "\nStudentID:ea5f6b94d6a8a8f1e7890f6a64883cdc2b6125821e20ddd36a33b773bd46b727\n"
 }
 
 func getIP() string {
@@ -144,6 +147,18 @@ func getIP() string {
 		return e
 	}
 	return "127.0.0.1"
+}
+
+func getExternalIP() string {
+	resp, err := http.Get("http://myexternalip.com/raw")
+	if err != nil {
+		return IP
+	}
+	defer resp.Body.Close()
+	reader := bufio.NewReader(resp.Body)
+	ip, _ := reader.ReadString('\n')
+	ip = strings.TrimSuffix(ip, "\n")
+	return ip
 }
 
 func getPort() string {
